@@ -29,7 +29,7 @@ themes1 = ['a','b','c','d','e']
 
 themes2 = ['f','g','h','i','j']
 
-
+status = 'suspend'
 
 class Player():
   def __init__(self, name,):
@@ -43,12 +43,30 @@ def question(num):
           themes1[random.randint(0, len(themes1)-1)], 
           themes2[random.randint(0, len(themes2)-1)]
           )
-        TextSendMessage('%sさんの番です'%playerdict[playerIDs_SO[num]].name)
+        TextSendMessage('%sさんの番です'%playerdict{playerIDs_SO[num]}.name)
         TextSendMessage(text)
         global actedNum
         actedNum+=1
 
-status = 'suspend'
+def createConfirm():
+  confirm_temprate_message = TemplateSendMessage(
+      alt_text='Confirm template',
+      template=ConfirmTemplate(
+          text='参加する？',
+          actions=[
+              PostbackAction(
+                  label='postback',
+                  display_text='postback text',
+                  data='participate'
+              ),
+              MessageAction(
+                  label='postback',
+                  data='close'
+              )
+          ]
+      )
+  )
+
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -80,11 +98,13 @@ def handle_text_message(event):
 
     if status == 'suspend':
       if text =='開始':
-        playerdict = []
+        playerdict = {}
         playerIDs_SO = []
         playerIDs_DO = []
         actedNum = 0
-        TextSendMessage('参加したくば「参加」と送れ')
+        createConfirm()
+        line_bot_api.reply_message(event.reply_token,confirm_temprate_message
+        )
         status = 'inviting'
 
     elif status == 'inviting':
@@ -92,14 +112,14 @@ def handle_text_message(event):
         if profile.user_id in playerIDs_SO:
           TextSendMessage('参加済み')
         else:
-          playerdict[profile.user_id] = Player(profile.display_name)
+          playerdict{profile.user_id} = Player(profile.display_name)
           playerIDs_SO.append(profile.user_id)
       elif text == '募集締め切り':
         TextSendMessage('募集終了')
         text = '参加メンバーは以下の通り\n'
         for playerId in playerIDs_SO:
           i = 1
-          text += '%d. %s/n'%(i, playerdict[playerId].display_name)
+          text += '%d. %s/n'%(i, playerdict{playerId}.display_name)
         playerIDs_DO = playerIDs_SO
         random.shuffle(playerIDs_SO)
         question(actedNum)
@@ -112,29 +132,29 @@ def handle_text_message(event):
         text =''
         i = 1
         for playerID in playerIDs_SO:
-          text += ('answer%d: %s\n'%(i, playerdict[playerIDs_SO].answer))
+          text += ('answer%d: %s\n'%(i, playerdict{playerIDs_SO}.answer))
           i+=1
         text.rstrip('\n')
         TextSendMessage(text)
         status = 'voting'
       else:
         if profile.user_id == playerIDs_SO[actedNum]:
-          playerdict[profile.user_id].answer = text
+          playerdict{profile.user_id}.answer = text
           text = text = 'お題は「%s × %s」です。'%(
             themes1[random.randint(0, len(themes1)-1)], themes2[random.randint(0, len(themes2)-1)]
             )
-          TextSendMessage('%sさんの番です'%playerdict[playerIDs_SO[actedNum]].name)
+          TextSendMessage('%sさんの番です'%playerdict{playerIDs_SO[actedNum]}.name)
           TextSendMessage(text)
           actedNum+=1
         else:
-          TextSendMessage('%sさんの番です'%playerdict[playerIDs_SO[actedNum]].name)
+          TextSendMessage('%sさんの番です'%playerdict{playerIDs_SO[actedNum]}.name)
 
     elif status == 'voting':
-      if not playerdict[profile.user_id].voted:
+      if not playerdict{profile.user_id}.voted:
         vote_num = text
         if 1 <= vote_num and vote_num <= len(playerIDs_SO):
-          playerdict[profile.user_id].ansVote+=1
-          playerdict[profile.user_id].voted = True
+          playerdict{profile.user_id}.ansVote+=1
+          playerdict{profile.user_id}.voted = True
           actedNum+=1
         else:
           TextSendMessage('answer%s is not exists'%text)
@@ -145,16 +165,42 @@ def handle_text_message(event):
         winnerIDs = []
         most = 0
         for playerID in playerIDs_DO:
-          if playerdict[playerID].ansVote == most:
+          if playerdict{playerID}.ansVote == most:
             winnerIDs.append(playerID)
-          elif playerdict[playerID].ansVote > most:
+          elif playerdict{playerID}.ansVote > most:
             winnerIDs = [playerID]
         for winnerID in winnerIDs:
-          text+= 'と%sさん'%playerdict[winnerID].name
+          text+= 'と%sさん'%playerdict{winnerID}.name
         text.lstrip('と')
         text+='です。'
         TextSendMessage(text)
         status = 'suspend'
+
+  @handler.add(PostbackEvent)
+  def on_postback(event):
+    global status
+    global playerIDs_SO
+    global playerIDs_DO
+    global playerdict
+
+    if status == 'inviting':
+      profile = line_bot_api.get_profile(event.source.user_id)
+      reply_token = event.reply_token
+      postback_msg = event.postback.data
+      if postback_msg == 'participate':
+        if not profile.user_id in playerIDs_SO:
+          playerdict{profile.user_id} = Player(profile.display_name)
+          playerIDs_SO.append(profile.user_id)
+      elif postback_msg == 'close':
+        TextSendMessage('募集終了')
+        text = '参加メンバーは以下の通り\n'
+        for playerId in playerIDs_SO:
+          i = 1
+          text += '%d. %s/n'%(i, playerdict{playerId}.display_name)
+        playerIDs_DO = playerIDs_SO
+        random.shuffle(playerIDs_SO)
+        question(actedNum)
+        status = 'playing'
 
 if __name__ == "__main__":
 #    app.run()
