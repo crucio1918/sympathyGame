@@ -95,6 +95,7 @@ def handle_text_message(event):
   profile = line_bot_api.get_profile(event.source.user_id)
 
   if text == '強制終了':
+    TextSendMessage('強制終了')
     status == 'suspend'
   else:
     if status == 'suspend':
@@ -103,7 +104,7 @@ def handle_text_message(event):
         playerIDs_SO = []
         playerIDs_DO = []
         actedNum = 0
-        TextSendMessage('「開始」は受け取れてる')
+        TextSendMessage('「開始」はOK')
         createConfirm()
         line_bot_api.reply_message(
           event.reply_token,confirm_temprate_message
@@ -169,10 +170,12 @@ def handle_text_message(event):
       reply_token = event.reply_token
       postback_msg = event.postback.data
       if postback_msg == 'participate':
+        TextSendMessage('「参加」はOK')
         if not profile.user_id in playerIDs_SO:
           playerdict{profile.user_id} = Player(profile.display_name)
           playerIDs_SO.append(profile.user_id)
       elif postback_msg == 'close':
+        TextSendMessage('「締め切り」はOK')
         TextSendMessage('募集終了')
         text = '参加メンバーは以下の通り\n'
         for playerId in playerIDs_SO:
