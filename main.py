@@ -16,6 +16,7 @@ LINE_CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 import random
+import time
 
 playerdict = {}   #playerID(user_id)とPlayerインスタンスの紐付け
 
@@ -44,6 +45,8 @@ def question(num):
           themes2[random.randint(0, len(themes2)-1)]
           )
         TextSendMessage('%sさんの番です'%playerdict{playerIDs_SO[num]}.name)
+        TextSendMessage('抽選中・・・')
+        time.sleep(3.0)
         TextSendMessage(text)
         global actedNum
         actedNum+=1
@@ -140,12 +143,7 @@ def handle_text_message(event):
       else:
         if profile.user_id == playerIDs_SO[actedNum]:
           playerdict{profile.user_id}.answer = text
-          text = text = 'お題は「%s × %s」です。'%(
-            themes1[random.randint(0, len(themes1)-1)], themes2[random.randint(0, len(themes2)-1)]
-            )
-          TextSendMessage('%sさんの番です'%playerdict{playerIDs_SO[actedNum]}.name)
-          TextSendMessage(text)
-          actedNum+=1
+          question(actedNum)
         else:
           TextSendMessage('%sさんの番です'%playerdict{playerIDs_SO[actedNum]}.name)
 
