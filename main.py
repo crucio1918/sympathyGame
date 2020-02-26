@@ -58,12 +58,11 @@ def createConfirm():
           text='参加する？',
           actions=[
               PostbackAction(
-                  label='postback',
-                  display_text='postback text',
+                  label='参加',
                   data='participate'
               ),
-              MessageAction(
-                  label='postback',
+              PostbackAction(
+                  label='締め切り',
                   data='close'
               )
           ]
@@ -106,27 +105,10 @@ def handle_text_message(event):
         playerIDs_DO = []
         actedNum = 0
         createConfirm()
-        line_bot_api.reply_message(event.reply_token,confirm_temprate_message
+        line_bot_api.reply_message(
+          event.reply_token,confirm_temprate_message
         )
         status = 'inviting'
-
-    elif status == 'inviting':
-      if text == '参加':
-        if profile.user_id in playerIDs_SO:
-          TextSendMessage('参加済み')
-        else:
-          playerdict{profile.user_id} = Player(profile.display_name)
-          playerIDs_SO.append(profile.user_id)
-      elif text == '募集締め切り':
-        TextSendMessage('募集終了')
-        text = '参加メンバーは以下の通り\n'
-        for playerId in playerIDs_SO:
-          i = 1
-          text += '%d. %s/n'%(i, playerdict{playerId}.display_name)
-        playerIDs_DO = playerIDs_SO
-        random.shuffle(playerIDs_SO)
-        question(actedNum)
-        status = 'playing'
 
     elif status == 'playing':
       if actedNum == len(playerIDs_SO):
@@ -135,7 +117,7 @@ def handle_text_message(event):
         text =''
         i = 1
         for playerID in playerIDs_SO:
-          text += ('answer%d: %s\n'%(i, playerdict{playerIDs_SO}.answer))
+          text += ('answer%d: %s\n'%(i, playerdict{playerID}.answer))
           i+=1
         text.rstrip('\n')
         TextSendMessage(text)
@@ -149,9 +131,9 @@ def handle_text_message(event):
 
     elif status == 'voting':
       if not playerdict{profile.user_id}.voted:
-        vote_num = text
+        vote_num = int(text)
         if 1 <= vote_num and vote_num <= len(playerIDs_SO):
-          playerdict{profile.user_id}.ansVote+=1
+          playerdict{playerIDs_SO[vote_num]}.ansVote+=1
           playerdict{profile.user_id}.voted = True
           actedNum+=1
         else:
@@ -167,6 +149,7 @@ def handle_text_message(event):
             winnerIDs.append(playerID)
           elif playerdict{playerID}.ansVote > most:
             winnerIDs = [playerID]
+            most = playerdict{playerID}.ansVote
         for winnerID in winnerIDs:
           text+= 'と%sさん'%playerdict{winnerID}.name
         text.lstrip('と')
@@ -195,6 +178,8 @@ def handle_text_message(event):
         for playerId in playerIDs_SO:
           i = 1
           text += '%d. %s/n'%(i, playerdict{playerId}.display_name)
+        text.rstrip('\n')
+        TextSendMessage(text)
         playerIDs_DO = playerIDs_SO
         random.shuffle(playerIDs_SO)
         question(actedNum)
