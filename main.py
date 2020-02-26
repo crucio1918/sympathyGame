@@ -133,7 +133,7 @@ def handle_text_message(event):
       if not playerdict{profile.user_id}.voted:
         vote_num = int(text)
         if 1 <= vote_num and vote_num <= len(playerIDs_SO):
-          playerdict{playerIDs_SO[vote_num]}.ansVote+=1
+          playerdict{playerIDs_SO[vote_num-1]}.ansVote+=1
           playerdict{profile.user_id}.voted = True
           actedNum+=1
         else:
@@ -141,7 +141,7 @@ def handle_text_message(event):
       else:
         TextSendMessage('already voted')
       if actedNum == len(playerIDs_SO):
-        text = ''
+        text = '勝者は'
         winnerIDs = []
         most = 0
         for playerID in playerIDs_DO:
