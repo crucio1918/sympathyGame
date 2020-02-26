@@ -97,13 +97,13 @@ def handle_text_message(event):
   if text == '強制終了':
     status == 'suspend'
   else:
-
     if status == 'suspend':
       if text =='開始':
         playerdict = {}
         playerIDs_SO = []
         playerIDs_DO = []
         actedNum = 0
+        TextSendMessage('「開始」は受け取れてる')
         createConfirm()
         line_bot_api.reply_message(
           event.reply_token,confirm_temprate_message
